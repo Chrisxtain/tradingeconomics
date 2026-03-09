@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base target="_top">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 14px;
+      color: #333;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .section {
+      margin-bottom: 14px;
+      border: 1px solid #e6e6e6;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    h2 {
+      margin: 0 0 12px 0;
+      font-size: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 8px 0 4px 0;
+      font-weight: 600;
+    }
+
+    input, select, button {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 8px;
+      margin-bottom: 8px;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    input, select {
+      border: 1px solid #ccc;
+    }
+
+    button {
+      border: none;
+      background: #21a364;
+      color: white;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: #f3f3f3;
+      color: #333;
+      border: 1px solid #ddd;
+    }
+
+    .small {
+      font-size: 12px;
+      color: #666;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="setupView" class="hidden">
+  <div class="section">
+    <label for="apiKeyInput">API Key</label>
+    <input id="apiKeyInput" type="password" placeholder="Enter your Trading Economics API key">
+    <button id="saveKeyBtn">Continue</button>
+  </div>
+</div>
+
+<div id="appView" class="hidden">
+  <div class="section">
+    <label for="categorySelect">Category</label>
+    <select id="categorySelect">
+      <option value="indicators">Indicators</option>
+      <option value="calendar">Calendar</option>
+      <option value="forecast">Forecast</option>
+      <option value="markets">Markets</option>
+      <option value="financials">Financials</option>
+      <option value="news">News</option>
+      <option value="comtrade">Comtrade</option>
+      <option value="eurostat">Eurostat</option>
+      <option value="worldbank">World Bank</option>
+      <option value="fred">Federal Reserve</option>
+    </select>
+
+    <label for="actionSelect">Action</label>
+    <select id="actionSelect"></select>
+  </div>
+
+  <div class="section">
+    <div id="fields"></div>
+    <button id="runBtn">Insert Data</button>
+  </div>
+</div>
+
+<div id="settingsView" class="hidden">
+  <h2>Settings</h2>
+  <div class="section">
+    <label for="newApiKeyInput">API Key</label>
+    <input id="newApiKeyInput" type="password" placeholder="Enter new API key">
+    <button id="updateKeyBtn">Save</button>
+    <button id="removeKeyBtn" class="secondary">Remove Key</button>
+  </div>
+</div>
+
+<script>
+const INITIAL_STATE = <?!= JSON.stringify(initialState || {}) ?>;
+
+const ACTIONS = {
+  indicators: [
+    {
+      label: 'All Indicators',
+      fields: [],
+      build: function () {
+        return '/indicators';
+      }
+    },
+    {
+      label: 'By Country',
+      fields: ['country'],
+      build: function (v) {
+        return '/country/' + encodeURIComponent(v.country);
+      }
+    },
+    {
+      label: 'By Indicator',
+      fields: ['indicator'],
+      build: function (v) {
+        return '/country/all/' + encodeURIComponent(v.indicator);
+      }
+    },
+    {
+      label: 'By Ticker',
+      fields: ['ticker'],
+      build: function (v) {
+        return '/country/ticker/' + encodeURIComponent(v.ticker);
+      }
+    },
+    {
+      label: 'Historical',
+      fields: ['country', 'indicator', 'startDate', 'endDate'],
+      build: function (v) {
+        return '/historical/country/' + encodeURIComponent(v.country) +
+          '/indicator/' + encodeURIComponent(v.indicator) +
+          '/' + v.startDate + '/' + v.endDate;
+      }
+    },
+    {
+      label: 'Ratings',
+      fields: [],
+      build: function () {
+        return '/ratings';
+      }
+    },
+    {
+      label: 'Ratings by Country',
+      fields: ['country'],
+      build: function (v) {
+        return '/ratings/' + encodeURIComponent(v.country);
+      }
+    },
+    {
+      label: 'Updates',
+      fields: [],
+      build: function () {
+        return '/updates';
+      }
+    }
+  ],
+
+  calendar: [
+    {
+      label: 'Latest Events',
+      fields: [],
+      build: function () {
+        return '/calendar';
+      }
+    },
+    {
+      label: 'By Ticker',
+      fields: ['ticker', 'startDate', 'endDate'],
+      build: function (v) {
+        return '/calendar/ticker/' + encodeURIComponent(v.ticker) +
+          '/' + v.startDate + '/' + v.endDate;
+      }
+    },
+    {
+      label: 'By Country and Group',
+      fields: ['country', 'group', 'startDate', 'endDate'],
+      build: function (v) {
+        return '/calendar/country/' + encodeURIComponent(v.country) +
+          '/group/' + encodeURIComponent(v.group) +
+          '/' + v.startDate + '/' + v.endDate;
+      }
+    },
+    {
+      label: 'By Calendar ID',
+      fields: ['calendarId'],
+      build: function (v) {
+        return '/calendar/calendarid/' + encodeURIComponent(v.calendarId);
+      }
+    }
+  ],
+
+  forecast: [
+    {
+      label: 'By Ticker',
+      fields: ['ticker'],
+      build: function (v) {
+        return '/forecast/ticker/' + encodeURIComponent(v.ticker);
+      }
+    },
+    {
+      label: 'By Country and Indicator',
+      fields: ['country', 'indicator'],
+      build: function (v) {
+        return '/forecast/country/' + encodeURIComponent(v.country) +
+          '/indicator/' + encodeURIComponent(v.indicator);
+      }
+    },
+    {
+      label: 'Currencies',
+      fields: [],
+      build: function () {
+        return '/markets/forecasts/currency';
+      }
+    },
+    {
+      label: 'Commodities',
+      fields: [],
+      build: function () {
+        return '/markets/forecasts/commodity';
+      }
+    },
+    {
+      label: 'Bonds',
+      fields: [],
+      build: function () {
+        return '/markets/forecasts/bond';
+      }
+    },
+    {
+      label: 'Crypto',
+      fields: [],
+      build: function () {
+        return '/markets/forecasts/crypto';
+      }
+    },
+    {
+      label: 'Indexes',
+      fields: [],
+      build: function () {
+        return '/markets/forecasts/index';
+      }
+    }
+  ],
+
+  markets: [
+    {
+      label: 'Symbol Snapshot',
+      fields: ['symbol'],
+      build: function (v) {
+        return '/markets/symbol/' + encodeURIComponent(v.symbol);
+      }
+    },
+    {
+      label: 'Historical',
+      fields: ['symbol', 'startDate', 'endDate'],
+      build: function (v) {
+        return '/markets/historical/' + encodeURIComponent(v.symbol) +
+          '?d1=' + encodeURIComponent(v.startDate) +
+          '&d2=' + encodeURIComponent(v.endDate);
+      }
+    },
+    {
+      label: 'Intraday',
+      fields: ['symbol', 'fromDateTime', 'toDateTime'],
+      build: function (v) {
+        return '/markets/intraday/' + encodeURIComponent(v.symbol) +
+          '?d1=' + encodeURIComponent(v.fromDateTime.replace('T', ' ')) +
+          '&d2=' + encodeURIComponent(v.toDateTime.replace('T', ' '));
+      }
+    },
+    {
+      label: 'Commodities',
+      fields: [],
+      build: function () {
+        return '/markets/commodities';
+      }
+    },
+    {
+      label: 'Currencies',
+      fields: [],
+      build: function () {
+        return '/markets/currency';
+      }
+    },
+    {
+      label: 'Crypto',
+      fields: [],
+      build: function () {
+        return '/markets/crypto';
+      }
+    },
+    {
+      label: 'Indexes',
+      fields: [],
+      build: function () {
+        return '/markets/index';
+      }
+    },
+    {
+      label: 'Bonds',
+      fields: [],
+      build: function () {
+        return '/markets/bond';
+      }
+    },
+    {
+      label: 'Peers',
+      fields: ['symbol'],
+      build: function (v) {
+        return '/markets/peers/' + encodeURIComponent(v.symbol);
+      }
+    }
+  ],
+
+  financials: [
+    {
+      label: 'Companies',
+      fields: ['country'],
+      build: function (v) {
+        return '/financials/companies?country=' + encodeURIComponent(v.country);
+      }
+    },
+    {
+      label: 'By Symbol',
+      fields: ['symbol'],
+      build: function (v) {
+        return '/financials/symbol/' + encodeURIComponent(v.symbol);
+      }
+    },
+    {
+      label: 'By Category',
+      fields: ['category'],
+      build: function (v) {
+        return '/financials/category/' + encodeURIComponent(v.category);
+      }
+    },
+    {
+      label: 'Categories',
+      fields: [],
+      build: function () {
+        return '/financials/categories';
+      }
+    },
+    {
+      label: 'Sectors',
+      fields: [],
+      build: function () {
+        return '/sectors';
+      }
+    },
+    {
+      label: 'Earnings Calendar',
+      fields: ['startDate', 'endDate'],
+      build: function (v) {
+        return '/earnings-revenues?d1=' + encodeURIComponent(v.startDate) +
+          '&d2=' + encodeURIComponent(v.endDate);
+      }
+    },
+    {
+      label: 'Earnings by Country',
+      fields: ['country', 'startDate', 'endDate'],
+      build: function (v) {
+        return '/earnings-revenues/country/' + encodeURIComponent(v.country) +
+          '?d1=' + encodeURIComponent(v.startDate) +
+          '&d2=' + encodeURIComponent(v.endDate);
+      }
+    }
+  ],
+
+  news: [
+    {
+      label: 'Latest News',
+      fields: [],
+      build: function () {
+        return '/news';
+      }
+    },
+    {
+      label: 'By Country and Indicator',
+      fields: ['country', 'indicator', 'startDate', 'endDate'],
+      build: function (v) {
+        return '/news/country/' + encodeURIComponent(v.country) +
+          '/' + encodeURIComponent(v.indicator) +
+          '?d1=' + encodeURIComponent(v.startDate) +
+          '&d2=' + encodeURIComponent(v.endDate);
+      }
+    },
+    {
+      label: 'List',
+      fields: ['startIndex', 'listSize'],
+      build: function (v) {
+        return '/news?limit=' + encodeURIComponent(v.listSize) +
+          '&start=' + encodeURIComponent(v.startIndex);
+      }
+    }
+  ],
+
+  comtrade: [
+    {
+      label: 'Categories',
+      fields: [],
+      build: function () {
+        return '/comtrade/categories';
+      }
+    },
+    {
+      label: 'Countries',
+      fields: [],
+      build: function () {
+        return '/comtrade/countries';
+      }
+    },
+    {
+      label: 'Updates',
+      fields: [],
+      build: function () {
+        return '/comtrade/updates';
+      }
+    },
+    {
+      label: 'By Country',
+      fields: ['country'],
+      build: function (v) {
+        return '/comtrade/country/' + encodeURIComponent(v.country);
+      }
+    },
+    {
+      label: 'Historical',
+      fields: ['symbol'],
+      build: function (v) {
+        return '/comtrade/historical/' + encodeURIComponent(v.symbol);
+      }
+    }
+  ],
+
+  eurostat: [
+    {
+      label: 'Countries',
+      fields: [],
+      build: function () {
+        return '/eurostat/countries';
+      }
+    },
+    {
+      label: 'Categories',
+      fields: [],
+      build: function () {
+        return '/eurostat/categories';
+      }
+    },
+    {
+      label: 'By Country',
+      fields: ['country'],
+      build: function (v) {
+        return '/eurostat/country/' + encodeURIComponent(v.country);
+      }
+    },
+    {
+      label: 'Historical',
+      fields: ['symbol', 'startDate', 'endDate'],
+      build: function (v) {
+        return '/eurostat/historical/' + encodeURIComponent(v.symbol) +
+          '?d1=' + encodeURIComponent(v.startDate) +
+          '&d2=' + encodeURIComponent(v.endDate);
+      }
+    }
+  ],
+
+  worldbank: [
+    {
+      label: 'Categories',
+      fields: [],
+      build: function () {
+        return '/worldbank/categories';
+      }
+    },
+    {
+      label: 'By Country',
+      fields: ['country'],
+      build: function (v) {
+        return '/worldbank/country/' + encodeURIComponent(v.country);
+      }
+    },
+    {
+      label: 'By Series Code',
+      fields: ['seriesCode'],
+      build: function (v) {
+        return '/worldbank/indicator?s=' + encodeURIComponent(v.seriesCode);
+      }
+    },
+    {
+      label: 'Historical',
+      fields: ['seriesCode'],
+      build: function (v) {
+        return '/worldbank/historical?s=' + encodeURIComponent(v.seriesCode);
+      }
+    }
+  ],
+
+  fred: [
+    {
+      label: 'States',
+      fields: [],
+      build: function () {
+        return '/fred/states';
+      }
+    },
+    {
+      label: 'Counties',
+      fields: ['state'],
+      build: function (v) {
+        return '/fred/counties/' + encodeURIComponent(v.state);
+      }
+    },
+    {
+      label: 'Historical',
+      fields: ['state', 'startDate', 'endDate'],
+      build: function (v) {
+        return '/fred/historical/' + encodeURIComponent(v.state) +
+          '?d1=' + encodeURIComponent(v.startDate) +
+          '&d2=' + encodeURIComponent(v.endDate);
+      }
+    },
+    {
+      label: 'By Country',
+      fields: ['country'],
+      build: function (v) {
+        return '/fred/snapshot/country/' + encodeURIComponent(v.country);
+      }
+    },
+    {
+      label: 'By Symbol',
+      fields: ['symbol'],
+      build: function (v) {
+        return '/fred/snapshot/symbol/' + encodeURIComponent(v.symbol);
+      }
+    }
+  ]
+};
+
+const FIELD_LABELS = {
+  country: 'Country',
+  indicator: 'Indicator',
+  ticker: 'Ticker',
+  symbol: 'Symbol',
+  group: 'Group',
+  category: 'Category',
+  startDate: 'Start Date',
+  endDate: 'End Date',
+  fromDateTime: 'From Datetime',
+  toDateTime: 'To Datetime',
+  calendarId: 'Calendar ID',
+  startIndex: 'Start Index',
+  listSize: 'List Size',
+  seriesCode: 'Series Code',
+  state: 'State / Series'
+};
+
+function $(id) {
+  return document.getElementById(id);
+}
+
+function show(viewId) {
+  $('setupView').classList.add('hidden');
+  $('appView').classList.add('hidden');
+  $('settingsView').classList.add('hidden');
+  $(viewId).classList.remove('hidden');
+}
+
+function renderActions() {
+  const category = $('categorySelect').value;
+  const actionSelect = $('actionSelect');
+  actionSelect.innerHTML = '';
+
+  ACTIONS[category].forEach(function (action, index) {
+    const option = document.createElement('option');
+    option.value = index;
+    option.textContent = action.label;
+    actionSelect.appendChild(option);
+  });
+
+  renderFields();
+}
+
+function renderFields() {
+  const category = $('categorySelect').value;
+  const action = ACTIONS[category][$('actionSelect').value];
+  const fieldsDiv = $('fields');
+  fieldsDiv.innerHTML = '';
+
+  (action.fields || []).forEach(function (field) {
+    const label = document.createElement('label');
+    label.textContent = FIELD_LABELS[field] || field;
+    fieldsDiv.appendChild(label);
+
+    const input = document.createElement('input');
+    input.id = 'field_' + field;
+
+    if (field === 'startDate' || field === 'endDate') {
+      input.type = 'date';
+    } else if (field === 'fromDateTime' || field === 'toDateTime') {
+      input.type = 'datetime-local';
+    } else if (field === 'startIndex' || field === 'listSize') {
+      input.type = 'number';
+    } else {
+      input.type = 'text';
+    }
+
+    fieldsDiv.appendChild(input);
+  });
+}
+
+function getFieldValues() {
+  const category = $('categorySelect').value;
+  const action = ACTIONS[category][$('actionSelect').value];
+  const values = {};
+
+  (action.fields || []).forEach(function (field) {
+    values[field] = $('field_' + field).value.trim();
+  });
+
+  return values;
+}
+
+function runSelectedAction() {
+  const category = $('categorySelect').value;
+  const action = ACTIONS[category][$('actionSelect').value];
+  const values = getFieldValues();
+
+  if (action.fields) {
+    for (const f of action.fields) {
+      if (!values[f]) {
+        alert('Please fill: ' + FIELD_LABELS[f]);
+        return;
+      }
+    }
+  }
+
+  const path = action.build(values);
+
+  google.script.run
+    .withSuccessHandler(function () {})
+    .withFailureHandler(function (err) {
+      alert(err.message);
+    })
+    .runApiRequest(path);
+}
+
+function saveFirstKey() {
+  const key = $('apiKeyInput').value.trim();
+
+  google.script.run
+    .withSuccessHandler(function () {
+      if (INITIAL_STATE.view === 'settings') {
+        show('settingsView');
+        return;
+      }
+
+      show('appView');
+      renderActions();
+
+      if (INITIAL_STATE.category && ACTIONS[INITIAL_STATE.category]) {
+        $('categorySelect').value = INITIAL_STATE.category;
+        renderActions();
+      }
+    })
+    .withFailureHandler(function (err) {
+      alert(err.message);
+    })
+    .saveApiKey(key);
+}
+
+function updateKey() {
+  const key = $('newApiKeyInput').value.trim();
+
+  google.script.run
+    .withSuccessHandler(function () {})
+    .withFailureHandler(function (err) {
+      alert(err.message);
+    })
+    .saveApiKey(key);
+}
+
+function removeKey() {
+  google.script.run
+    .withSuccessHandler(function () {
+      show('setupView');
+    })
+    .withFailureHandler(function (err) {
+      alert(err.message);
+    })
+    .clearApiKey();
+}
+
+function initialize() {
+  google.script.run
+    .withSuccessHandler(function (state) {
+      if (!state.hasApiKey) {
+        show('setupView');
+        return;
+      }
+
+      if (INITIAL_STATE.view === 'settings') {
+        show('settingsView');
+        return;
+      }
+
+      show('appView');
+      renderActions();
+
+      if (INITIAL_STATE.category && ACTIONS[INITIAL_STATE.category]) {
+        $('categorySelect').value = INITIAL_STATE.category;
+        renderActions();
+      }
+    })
+    .withFailureHandler(function (err) {
+      alert(err.message);
+    })
+    .getAppState();
+}
+
+$('categorySelect').addEventListener('change', renderActions);
+$('actionSelect').addEventListener('change', renderFields);
+$('runBtn').addEventListener('click', runSelectedAction);
+$('saveKeyBtn').addEventListener('click', saveFirstKey);
+$('updateKeyBtn').addEventListener('click', updateKey);
+$('removeKeyBtn').addEventListener('click', removeKey);
+
+initialize();
+</script>
+
+</body>
+</html>

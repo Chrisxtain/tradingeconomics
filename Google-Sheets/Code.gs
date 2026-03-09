@@ -1,180 +1,112 @@
-function urlToJson(url) {
-  Logger.log('Getting Json')
-  
-  try {
-    Logger.log('Url: ' + url)
-    
-    try {
-      var _url = UrlFetchApp.fetch(url)
-      var json = JSON.parse(_url)
-      }
-    catch(e) {
-      Logger.log(e)
-      SpreadsheetApp.getUi().alert('An error occurred. Your API key could be wrong or you might not have permissions to do this request. \n If you do not have an API key yet, you can get one here: https://developer.tradingeconomics.com')
-      return 'hidden'
-    }
-    
-    printData(json)
-    
-    return 'hidden'
-  }
-  catch(e) {
-    Logger.log(e)
-    SpreadsheetApp.getUi().alert('An error occurred. Please try again.')
-    return 'hidden'
-  }
-}
-
-function printData(json) {
-  Logger.log('Printing Data')
-  
-  try {
- 
-    if(json == null || json == undefined || json == "" || json == "[]" || json == "{}") {
-      SpreadsheetApp.getUi().alert('An error occurred. We have no data for that request.')
-      return
-    }
-    
-    //Getting GSheets Context
-    var app = SpreadsheetApp
-    var ss = app.getActiveSpreadsheet()
-    var activeSs = ss.getActiveSheet()
-    
-    
-    //Arrays Used to Separate Cell's Letters From Numbers
-    var alphabet = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z']
-    var checkIfIsNumber = [0,1,2,3,4,5,6,7,8,9]
-    
-    
-    //Getting Current Selected Cell
-    var selectedCell = activeSs.getSelection().getCurrentCell().getA1Notation()
-    var selectedCellString = String(selectedCell)
-    
-    
-    //Getting Each Character of the Selected Cell String
-    i = 0
-    var characters = []
-    var runWhile = true
-    while(runWhile) {
-      if (selectedCellString.charAt(i)) {
-        characters[i] = selectedCellString.charAt(i)
-        Logger.log('Characters: ' + characters[i])
-        i++
-      }
-      else {
-        runWhile = false
-      }
-    }
-    
-    
-    //Storing Value of Selected Cell, Splitting the Aphabetical Part From the Numeric Part
-    var charToNumber = ''
-    var numToNum = []
-    for(var i in characters) {
-      
-      for(var j in alphabet) {
-        
-        if(alphabet[j] == characters[i]) {
-          Logger.log('Same Character: ' + alphabet[j])
-          charToNumber += alphabet[j]
-        } 
-        else if (checkIfIsNumber[j] == characters[i]) {
-          Logger.log('Same Number: ' + checkIfIsNumber[j])
-          numToNum[i] = checkIfIsNumber[j]
-        }
-      }
-    }
-    
-    
-    //Storing Letters of the Selected Cell
-    function letterToColumn(letter)
-    {
-      var column = 0, length = letter.length
-      for (var i = 0; i < length; i++)
-      {
-        column += (letter.charCodeAt(i) - 64) * Math.pow(26, length - i - 1)
-      }
-      return column
-    }
-    
-    var i1 = letterToColumn(charToNumber)
-    Logger.log('i1: ' + i1)
-    
-    for(var i in json) {
-      
-      //Storing Numeric Part of the Selected Cell
-      var i2 = ''
-      for(var num in numToNum) {
-        i2 += numToNum[num]
-      }
-      Logger.log('i2: ' + i2)
-      
-      //Printing Headers
-      Logger.log('Printing Headers')
-      for(var header in json[0]) {
-        
-        activeSs.getRange(i2, i1).setValue(header)
-        i1++
-      }
-      
-      //Printing Rows
-      Logger.log('Printing Rows')
-      for(var i in json)
-      {
-        var _i1 = letterToColumn(charToNumber)
-        i2++
-          for(var j in json[i]) {
-            activeSs.getRange(i2, _i1).setValue(json[i][j])
-            _i1++
-          }
-      }
-      return
-    }
-  }
-  catch(e) {
-    Logger.log(e)
-    SpreadsheetApp.getUi().alert('An error occurred. Please try again.')
-    return
-  }
-}
-
-function openHtml() {
-  Logger.log('Opening HTML')
-  
-  try {
-    var html = HtmlService.createHtmlOutputFromFile('index.html').setTitle('Trading Economics')
-    SpreadsheetApp.getUi().showSidebar(html)
-  }
-  catch(e) {
-    Logger.log(e)
-  }
-}
-
-function openSearch(){
-  try {
-    let html = HtmlService.createHtmlOutputFromFile('search.html')
-    html.setWidth(600)
-    html.setHeight(400)
-    SpreadsheetApp.getUi().showModalDialog(html, 'Search')
-  }
-  catch(e) {
-    Logger.log(e)
-  }
-}
-
 function onOpen(e) {
-  try {
-    Logger.log('JS testing')
-    var ui = SpreadsheetApp.getUi()
-    ui.createMenu('TE')
-    .addItem('Get Data', 'openHtml')
-    .addToUi()
-  }
-  catch(e) {
-    Logger.log(e)
-  }
+  SpreadsheetApp.getUi()
+    .createMenu('TE')
+    .addItem('Indicators', 'openIndicators')
+    .addItem('Calendar', 'openCalendar')
+    .addItem('Forecast', 'openForecast')
+    .addItem('Markets', 'openMarkets')
+    .addItem('Financials', 'openFinancials')
+    .addItem('News', 'openNews')
+    .addItem('Comtrade', 'openComtrade')
+    .addItem('Eurostat', 'openEurostat')
+    .addItem('World Bank', 'openWorldBank')
+    .addItem('Federal Reserve', 'openFred')
+    .addSeparator()
+    .addItem('Settings', 'openSettings')
+    .addToUi();
 }
 
 function onInstall(e) {
-  onOpen(e)
+  onOpen(e);
+}
+
+function openIndicators() { openSidebarWithState_({ view: 'app', category: 'indicators' }); }
+function openCalendar() { openSidebarWithState_({ view: 'app', category: 'calendar' }); }
+function openForecast() { openSidebarWithState_({ view: 'app', category: 'forecast' }); }
+function openMarkets() { openSidebarWithState_({ view: 'app', category: 'markets' }); }
+function openFinancials() { openSidebarWithState_({ view: 'app', category: 'financials' }); }
+function openNews() { openSidebarWithState_({ view: 'app', category: 'news' }); }
+function openComtrade() { openSidebarWithState_({ view: 'app', category: 'comtrade' }); }
+function openEurostat() { openSidebarWithState_({ view: 'app', category: 'eurostat' }); }
+function openWorldBank() { openSidebarWithState_({ view: 'app', category: 'worldbank' }); }
+function openFred() { openSidebarWithState_({ view: 'app', category: 'fred' }); }
+function openSettings() { openSidebarWithState_({ view: 'settings' }); }
+
+function openSidebarWithState_(state) {
+  var template = HtmlService.createTemplateFromFile('Sidebar');
+  template.initialState = state || {};
+  var html = template.evaluate().setTitle('Trading Economics');
+  SpreadsheetApp.getUi().showSidebar(html);
+}
+
+function getAppState() {
+  var key = PropertiesService.getUserProperties().getProperty('TE_API_KEY') || '';
+  return { hasApiKey: !!key };
+}
+
+function saveApiKey(key) {
+  key = String(key || '').trim();
+  if (!key) throw new Error('Please enter a valid Trading Economics API key.');
+  PropertiesService.getUserProperties().setProperty('TE_API_KEY', key);
+  return { success: true };
+}
+
+function clearApiKey() {
+  PropertiesService.getUserProperties().deleteProperty('TE_API_KEY');
+  return { success: true };
+}
+
+function runApiRequest(path) {
+  path = String(path || '').trim();
+  if (!path) throw new Error('Invalid request.');
+
+  var key = PropertiesService.getUserProperties().getProperty('TE_API_KEY') || '';
+  if (!key) throw new Error('No API key found. Please set your API key first.');
+
+  var base = 'https://api.tradingeconomics.com';
+  var sep = path.indexOf('?') >= 0 ? '&' : '?';
+  var url = base + path + sep + 'f=json&c=' + encodeURIComponent(key);
+
+  var response = UrlFetchApp.fetch(url, {
+    method: 'get',
+    muteHttpExceptions: true
+  });
+
+  var status = response.getResponseCode();
+  var body = response.getContentText();
+
+  if (status < 200 || status >= 300) {
+    throw new Error('Trading Economics API request failed (' + status + ').');
+  }
+
+  if (!body || body.trim() === '' || body.trim() === '[]' || body.trim() === '{}') {
+    throw new Error('No data returned for this request.');
+  }
+
+  var json = JSON.parse(body);
+  printData(json);
+  return { success: true };
+}
+
+function printData(data) {
+  if (!Array.isArray(data)) data = [data];
+  if (!data.length) throw new Error('No data to print.');
+
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var cell = sheet.getActiveCell();
+  var startRow = cell.getRow();
+  var startCol = cell.getColumn();
+
+  var headers = Object.keys(data[0]);
+  var rows = data.map(function (item) {
+    return headers.map(function (h) {
+      var v = item[h];
+      if (v === null || v === undefined) return '';
+      if (typeof v === 'object') return JSON.stringify(v);
+      return v;
+    });
+  });
+
+  sheet.getRange(startRow, startCol, 1, headers.length).setValues([headers]);
+  sheet.getRange(startRow + 1, startCol, rows.length, headers.length).setValues(rows);
 }
