@@ -129,7 +129,7 @@
 <div id="setupView" class="hidden">
   <div class="section">
     <label for="apiKeyInput">API Key</label>
-    <input id="apiKeyInput" type="password" placeholder="Enter your Trading Economics API key">
+    <input id="apiKeyInput" type="password" placeholder="Enter your API key">
     <button id="saveKeyBtn">Continue</button>
   </div>
 </div>
@@ -172,6 +172,8 @@
 
 <script>
 const INITIAL_STATE = <?!= JSON.stringify(initialState || {}) ?>;
+
+let hasApiKey = false;
 
 const ACTIONS = {
   indicators: [
@@ -659,6 +661,16 @@ function show(viewId) {
   $(viewId).classList.remove('hidden');
 }
 
+function showSettingsView() {
+  show('settingsView');
+  const input = $('newApiKeyInput');
+  input.value = hasApiKey ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022' : '';
+  input.addEventListener('focus', function onFocus() {
+    if (input.value.startsWith('\u2022')) input.value = '';
+    input.removeEventListener('focus', onFocus);
+  }, { once: true });
+}
+
 function renderActions() {
   const category = $('categorySelect').value;
   const actionSelect = $('actionSelect');
@@ -753,7 +765,7 @@ function saveFirstKey() {
   google.script.run
     .withSuccessHandler(function () {
       if (INITIAL_STATE.view === 'settings') {
-        show('settingsView');
+        showSettingsView();
         return;
       }
 
@@ -778,10 +790,11 @@ function updateKey() {
 
   google.script.run
     .withSuccessHandler(function () {
-      show('settingsView');
+      hasApiKey = true;
+      showSettingsView();
     })
     .withFailureHandler(function (err) {
-      show('settingsView');
+      showSettingsView();
       alert(err.message);
     })
     .saveApiKey(key);
@@ -795,7 +808,7 @@ function removeKey() {
       show('setupView');
     })
     .withFailureHandler(function (err) {
-      show('settingsView');
+      showSettingsView();
       alert(err.message);
     })
     .clearApiKey();
@@ -811,8 +824,10 @@ function initialize() {
         return;
       }
 
+      hasApiKey = true;
+
       if (INITIAL_STATE.view === 'settings') {
-        show('settingsView');
+        showSettingsView();
         return;
       }
 
