@@ -10,7 +10,7 @@
     }
 
     .hidden {
-      display: none;
+      display: none !important;
     }
 
     .section {
@@ -62,9 +62,69 @@
       color: #666;
       margin-top: 4px;
     }
+
+    .spinner-overlay {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px 0;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 4px solid #e0e0e0;
+      border-top-color: #21a364;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    footer {
+      margin-top: 16px;
+      padding: 14px 0 4px 0;
+      border-top: 1px solid #e6e6e6;
+      font-size: 12px;
+      color: #888;
+    }
+
+    footer .footer-links {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    footer .footer-link {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.4;
+    }
+
+    footer .footer-link svg {
+      flex-shrink: 0;
+      margin-top: 1px;
+      color: #21a364;
+    }
+
+    footer a {
+      color: #21a364;
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
+
+<div id="spinnerView" class="spinner-overlay">
+  <div class="spinner"></div>
+</div>
 
 <div id="setupView" class="hidden">
   <div class="section">
@@ -580,7 +640,19 @@ function $(id) {
   return document.getElementById(id);
 }
 
+function showSpinner() {
+  $('spinnerView').classList.remove('hidden');
+  $('setupView').classList.add('hidden');
+  $('appView').classList.add('hidden');
+  $('settingsView').classList.add('hidden');
+}
+
+function hideSpinner() {
+  $('spinnerView').classList.add('hidden');
+}
+
 function show(viewId) {
+  hideSpinner();
   $('setupView').classList.add('hidden');
   $('appView').classList.add('hidden');
   $('settingsView').classList.add('hidden');
@@ -657,10 +729,18 @@ function runSelectedAction() {
   }
 
   const path = action.build(values);
+  const btn = $('runBtn');
+  btn.disabled = true;
+  showSpinner();
 
   google.script.run
-    .withSuccessHandler(function () {})
+    .withSuccessHandler(function () {
+      btn.disabled = false;
+      show('appView');
+    })
     .withFailureHandler(function (err) {
+      btn.disabled = false;
+      show('appView');
       alert(err.message);
     })
     .runApiRequest(path);
@@ -668,6 +748,7 @@ function runSelectedAction() {
 
 function saveFirstKey() {
   const key = $('apiKeyInput').value.trim();
+  showSpinner();
 
   google.script.run
     .withSuccessHandler(function () {
@@ -685,6 +766,7 @@ function saveFirstKey() {
       }
     })
     .withFailureHandler(function (err) {
+      show('setupView');
       alert(err.message);
     })
     .saveApiKey(key);
@@ -692,27 +774,36 @@ function saveFirstKey() {
 
 function updateKey() {
   const key = $('newApiKeyInput').value.trim();
+  showSpinner();
 
   google.script.run
-    .withSuccessHandler(function () {})
+    .withSuccessHandler(function () {
+      show('settingsView');
+    })
     .withFailureHandler(function (err) {
+      show('settingsView');
       alert(err.message);
     })
     .saveApiKey(key);
 }
 
 function removeKey() {
+  showSpinner();
+
   google.script.run
     .withSuccessHandler(function () {
       show('setupView');
     })
     .withFailureHandler(function (err) {
+      show('settingsView');
       alert(err.message);
     })
     .clearApiKey();
 }
 
 function initialize() {
+  showSpinner();
+
   google.script.run
     .withSuccessHandler(function (state) {
       if (!state.hasApiKey) {
@@ -734,6 +825,7 @@ function initialize() {
       }
     })
     .withFailureHandler(function (err) {
+      show('setupView');
       alert(err.message);
     })
     .getAppState();
@@ -748,6 +840,23 @@ $('removeKeyBtn').addEventListener('click', removeKey);
 
 initialize();
 </script>
+
+<footer>
+  <div class="footer-links">
+    <div class="footer-link">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span><a href="https://tradingeconomics.com/analytics/pricing.aspx?source=google-sheets" target="_blank">Subscribe</a> to a plan. Get <a href="https://developer.tradingeconomics.com/" target="_blank">API key</a> or use <strong>guest:guest</strong> to try it out with limited access.</span>
+    </div>
+    <div class="footer-link">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      <span>Read the <a href="https://docs.tradingeconomics.com/" target="_blank">API documentation</a> for available endpoints and parameters.</span>
+    </div>
+    <div class="footer-link">
+      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>For feedback, <a href="https://tradingeconomics.com/contact.aspx?subject=googleSheets" target="_blank">Contact us</a></span>
+    </div>
+  </div>
+</footer>
 
 </body>
 </html>
