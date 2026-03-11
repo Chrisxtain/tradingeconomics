@@ -76,7 +76,7 @@ The `appsscript.json` manifest declares the OAuth permissions the add-on needs t
 
 > **Important:** The file must be named `Sidebar` exactly — any other name will cause the add-on to fail.
 
-![c](https://github.com/tradingeconomics/tradingeconomics/assets/61524606/c9c3c5f2-04bd-487c-b3df-8c86e108f5e7)
+![Sidebar file setup](assets/sidebar.png)
 
 ![d](https://github.com/tradingeconomics/tradingeconomics/assets/61524606/e07e0caf-74a5-40e7-8196-9ce56f44dc20)
 
