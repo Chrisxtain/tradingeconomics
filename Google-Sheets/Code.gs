@@ -75,12 +75,24 @@ function runApiRequest(path) {
   var status = response.getResponseCode();
   var body = response.getContentText();
 
+  if (status === 401 || status === 403) {
+    throw new Error('Authentication failed (HTTP ' + status + '). Your API key may be invalid or expired. Go to TE → Settings to update it.');
+  }
+
+  if (status === 429) {
+    throw new Error('Rate limit exceeded (HTTP 429). Too many requests have been made. Please wait a moment and try again.');
+  }
+
+  if (status === 404) {
+    throw new Error('Endpoint not found (HTTP 404). The requested data category or parameters may not be supported. Check the documentation at https://docs.tradingeconomics.com');
+  }
+
   if (status < 200 || status >= 300) {
-    throw new Error('Trading Economics API request failed (' + status + ').');
+    throw new Error('Trading Economics API request failed (HTTP ' + status + '). Please try again or check https://docs.tradingeconomics.com for help.');
   }
 
   if (!body || body.trim() === '' || body.trim() === '[]' || body.trim() === '{}') {
-    throw new Error('No data returned for this request.');
+    throw new Error('No data returned for this request. This may mean:\n• The selected filters returned no results (try broadening your search)\n• Your API plan may not include access to this data category\n• The indicator or country combination does not exist\n\nSee https://docs.tradingeconomics.com for available endpoints.');
   }
 
   var json = JSON.parse(body);
@@ -90,7 +102,7 @@ function runApiRequest(path) {
 
 function printData(data) {
   if (!Array.isArray(data)) data = [data];
-  if (!data.length) throw new Error('No data to print.');
+  if (!data.length) throw new Error('The API returned an empty dataset. Try adjusting your filters or parameters.');
 
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   var cell = sheet.getActiveCell();
