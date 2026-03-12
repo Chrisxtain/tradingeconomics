@@ -44,6 +44,42 @@
       border: 1px solid #ccc;
     }
 
+    input[type="password"]::-ms-reveal,
+    input[type="password"]::-ms-clear {
+      display: none;
+    }
+
+    .input-wrap {
+      position: relative;
+      margin-bottom: 8px;
+    }
+
+    .input-wrap input {
+      margin-bottom: 0;
+      padding-right: 36px;
+    }
+
+    .eye-btn {
+      position: absolute;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      width: 36px;
+      background: none;
+      border: none;
+      padding: 0;
+      margin: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #888;
+    }
+
+    .eye-btn:hover {
+      color: #333;
+    }
+
     button {
       border: none;
       background: #21a364;
@@ -129,7 +165,12 @@
 <div id="setupView" class="hidden">
   <div class="section">
     <label for="apiKeyInput">API Key</label>
-    <input id="apiKeyInput" type="password" placeholder="Enter your API key">
+    <div class="input-wrap">
+      <input id="apiKeyInput" type="password" placeholder="Enter your API key">
+      <button type="button" class="eye-btn" id="toggleApiKeyBtn" aria-label="Toggle API key visibility">
+        <svg id="eyeIconSetup" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
     <button id="saveKeyBtn">Continue</button>
   </div>
 </div>
@@ -164,7 +205,12 @@
   <h2>Settings</h2>
   <div class="section">
     <label for="newApiKeyInput">API Key</label>
-    <input id="newApiKeyInput" type="password" placeholder="Enter new API key">
+    <div class="input-wrap">
+      <input id="newApiKeyInput" type="password" placeholder="Enter new API key">
+      <button type="button" class="eye-btn" id="toggleNewApiKeyBtn" aria-label="Toggle API key visibility">
+        <svg id="eyeIconSettings" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
     <button id="updateKeyBtn">Save</button>
     <button id="removeKeyBtn" class="secondary">Remove Key</button>
   </div>
@@ -852,6 +898,21 @@ $('runBtn').addEventListener('click', runSelectedAction);
 $('saveKeyBtn').addEventListener('click', saveFirstKey);
 $('updateKeyBtn').addEventListener('click', updateKey);
 $('removeKeyBtn').addEventListener('click', removeKey);
+
+function toggleVisibility(inputId, btnId) {
+  const input = $(inputId);
+  const isHidden = input.type === 'password';
+  input.type = isHidden ? 'text' : 'password';
+  $(btnId).querySelector('svg').style.opacity = isHidden ? '0.4' : '1';
+}
+
+$('toggleApiKeyBtn').addEventListener('click', function () {
+  toggleVisibility('apiKeyInput', 'toggleApiKeyBtn');
+});
+
+$('toggleNewApiKeyBtn').addEventListener('click', function () {
+  toggleVisibility('newApiKeyInput', 'toggleNewApiKeyBtn');
+});
 
 initialize();
 </script>
