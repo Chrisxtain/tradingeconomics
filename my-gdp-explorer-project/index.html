@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GDP Explorer — Global Economic Intelligence</title>
+  <meta name="description" content="Explore and compare the GDP of Mexico, Sweden, Thailand, and New Zealand with beautiful animated charts powered by Trading Economics data."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- Animated background particles -->
+  <div class="bg-particles" id="bgParticles"></div>
+
+  <!-- Navigation -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <div class="nav-logo">
+        <span class="logo-icon">📊</span>
+        <span class="logo-text">GDP<span class="logo-accent">Explorer</span></span>
+      </div>
+      <div class="nav-badge">Powered by Trading Economics</div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-tag animate-in" style="--delay: 0s">🌍 Global Economic Intelligence</div>
+      <h1 class="hero-title animate-in" style="--delay: 0.1s">
+        Explore World
+        <span class="gradient-text">GDP Data</span>
+      </h1>
+      <p class="hero-subtitle animate-in" style="--delay: 0.2s">
+        Dive deep into the economic performance of 4 countries with real-time data,
+        historical trends, and stunning interactive visualizations.
+      </p>
+
+      <!-- Country Selector -->
+      <div class="country-selector animate-in" style="--delay: 0.3s">
+        <button class="country-btn active" id="btn-mexico" data-country="mexico" onclick="selectCountry('mexico')">
+          <img class="flag-img" src="https://flagcdn.com/mx.svg" alt="Mexico flag"/>
+          <span class="cname">Mexico</span>
+        </button>
+        <button class="country-btn" id="btn-sweden" data-country="sweden" onclick="selectCountry('sweden')">
+          <img class="flag-img" src="https://flagcdn.com/se.svg" alt="Sweden flag"/>
+          <span class="cname">Sweden</span>
+        </button>
+        <button class="country-btn" id="btn-thailand" data-country="thailand" onclick="selectCountry('thailand')">
+          <img class="flag-img" src="https://flagcdn.com/th.svg" alt="Thailand flag"/>
+          <span class="cname">Thailand</span>
+        </button>
+        <button class="country-btn" id="btn-new+zealand" data-country="new+zealand" onclick="selectCountry('new+zealand')">
+          <img class="flag-img" src="https://flagcdn.com/nz.svg" alt="New Zealand flag"/>
+          <span class="cname">New Zealand</span>
+        </button>
+      </div>
+    </div>
+    <div class="hero-glow"></div>
+  </section>
+
+  <!-- Stats Cards -->
+  <section class="stats-section">
+    <div class="container">
+      <div class="stats-grid" id="statsGrid">
+        <div class="stat-card animate-in" style="--delay: 0.4s">
+          <div class="stat-icon">💰</div>
+          <div class="stat-body">
+            <div class="stat-label">Current GDP</div>
+            <div class="stat-value" id="statCurrentGDP">—</div>
+            <div class="stat-unit">USD Billions</div>
+          </div>
+          <div class="stat-glow"></div>
+        </div>
+        <div class="stat-card animate-in" style="--delay: 0.5s">
+          <div class="stat-icon">📈</div>
+          <div class="stat-body">
+            <div class="stat-label">Peak GDP</div>
+            <div class="stat-value" id="statPeakGDP">—</div>
+            <div class="stat-unit">USD Billions</div>
+          </div>
+          <div class="stat-glow"></div>
+        </div>
+        <div class="stat-card animate-in" style="--delay: 0.6s">
+          <div class="stat-icon">🔢</div>
+          <div class="stat-body">
+            <div class="stat-label">Years of Data</div>
+            <div class="stat-value" id="statYears">—</div>
+            <div class="stat-unit">Years tracked</div>
+          </div>
+          <div class="stat-glow"></div>
+        </div>
+        <div class="stat-card animate-in" style="--delay: 0.7s">
+          <div class="stat-icon">🚀</div>
+          <div class="stat-body">
+            <div class="stat-label">Growth vs 2000</div>
+            <div class="stat-value" id="statGrowth">—</div>
+            <div class="stat-unit">% change</div>
+          </div>
+          <div class="stat-glow"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Chart Section -->
+  <section class="chart-section">
+    <div class="container">
+
+      <!-- Historical GDP Line Chart -->
+      <div class="chart-card animate-in" style="--delay: 0.5s">
+        <div class="chart-header">
+          <div>
+            <h2 class="chart-title" id="lineChartTitle">Mexico GDP — Historical Trend</h2>
+            <p class="chart-subtitle">Annual GDP in USD Billions (1960–2024)</p>
+          </div>
+          <div class="chart-controls">
+            <button class="range-btn active" onclick="setRange(20)" id="range20">20Y</button>
+            <button class="range-btn" onclick="setRange(40)" id="range40">40Y</button>
+            <button class="range-btn" onclick="setRange(0)" id="rangeAll">ALL</button>
+          </div>
+        </div>
+        <div class="chart-loader" id="lineLoader">
+          <div class="spinner"></div>
+          <p>Fetching live data…</p>
+        </div>
+        <div class="chart-wrapper" id="lineChartWrapper" style="display:none">
+          <canvas id="lineChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Comparison Bar Chart -->
+      <div class="chart-card animate-in" style="--delay: 0.6s">
+        <div class="chart-header">
+          <div>
+            <h2 class="chart-title">All Countries — GDP Comparison</h2>
+            <p class="chart-subtitle">Latest GDP side-by-side (USD Billions)</p>
+          </div>
+        </div>
+        <div class="chart-loader" id="barLoader">
+          <div class="spinner"></div>
+          <p>Fetching comparison data…</p>
+        </div>
+        <div class="chart-wrapper" id="barChartWrapper" style="display:none">
+          <canvas id="barChart"></canvas>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Country Detail Section -->
+  <section class="detail-section">
+    <div class="container">
+      <div class="detail-card animate-in" style="--delay: 0.7s" id="detailCard">
+        <div class="detail-flag" id="detailFlag">🇲🇽</div>
+        <div class="detail-info">
+          <h3 class="detail-country" id="detailCountry">Mexico</h3>
+          <p class="detail-desc" id="detailDesc">Loading country information…</p>
+        </div>
+        <div class="detail-stats">
+          <div class="dstat">
+            <span class="dstat-label">Latest Year</span>
+            <span class="dstat-val" id="dstatYear">—</span>
+          </div>
+          <div class="dstat">
+            <span class="dstat-label">Lowest GDP</span>
+            <span class="dstat-val" id="dstatMin">—</span>
+          </div>
+          <div class="dstat">
+            <span class="dstat-label">Average GDP</span>
+            <span class="dstat-val" id="dstatAvg">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <span class="footer-logo">📊 GDPExplorer</span>
+      <span class="footer-copy">Data sourced from <a href="https://tradingeconomics.com" target="_blank">Trading Economics</a> · Built with ❤️ by xtain</span>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
