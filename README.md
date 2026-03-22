@@ -35,7 +35,7 @@ https://hub.docker.com/u/tradingeconomics
 
 #
 
-**Learn More**
+**Learn More abour our API**
 
 https://tradingeconomics.com/api/
 
